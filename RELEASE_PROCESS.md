@@ -1,40 +1,42 @@
-# Releasing InSpec
+# Releasing Chef InSpec
 
-This document describes the release process for InSpec as used internally at Chef Software.
+This document describes the release process for Chef InSpec as used internally at Chef Software.
 
 ## Promote Dependency Gems
 
-It's important that dependency gems be promoted (released to rubygems.org) BEFORE the last PR you intend to release is merged into inspec/inspec. This is because during the inspec merge process, software artifacts (such as omnibus packages, Habitat packages, and Docker images) are created that embed the dependencies. During promotion, these artifacts are simply promoted, not rebuilt. If you need a later version of one of these dependencies and have no legitimate PR to merge, a dummy PR may be needed.
+It's important that you promote dependency gems, and thus release them to rubygems.org, BEFORE the last PR that you intend to release merges into inspec/inspec. This is because during the `inspec` merge process, software artifacts, such as omnibus packages, Habitat packages, and Docker images, are created that embed the dependencies. During promotion, these artifacts are simply promoted, rather than rebuilt. If you need a later version of one of these dependencies and have no legitimate PR to merge, you may need a dummy PR.
 
 ### Key Dependencies
 
-Any change to these gems must be promoted to rubygems.org prior to releasing InSpec.
+Any change to these gems must be promoted to rubygems.org prior to releasing Chef InSpec.
 
-#### train / train-core
+#### `train` / `train-core`
 
-Train is the connectivity library for InSpec, and is the most critical dependency of InSpec.
+Train is the connectivity library for Chef InSpec, and is the most critical dependency of Chef InSpec.
 
-train-core is a stripped-down version of train, with no cloud provider plugins and no gems that require compilation during installation.
+`train-core` is a stripped-down version of `train`, with no cloud provider plugins and no gems that require compilation during installation.
 
-You can promote train by running, in #inspec-notify,
+You can promote `train` by running, in #inspec-notify:
+
 ```
 /expeditor promote inspec/train:master 3.2.23
 ```
 
 Note that the version you give to Expeditor is the plain version (not the tag, which includes a `v` prefix).
 
-#### train-aws, train-winrm, and train-habitat
+#### `train-aws`, `train-winrm`, and `train-habitat`
 
-These are the transports (connectivity drivers) that have been fully plugin-ized.
+These gems are the transports, or connectivity drivers, that have been fully plugin-ized.
 
-train-aws in particular is critical because it carries the gem dependencies for all AWS libraries required by inspec-aws; when those change, train-aws must be updated, and so must train and inspec.
+`train-aws` in particular is critical because it carries the gem dependencies for all AWS libraries required by `inspec-aws`. When the gem dependencies change, you must update `train-aws`, and so must `train` and `inspec`.
 
-You can promote each of these gems by running, in #inspec-notify,
+You can promote each of these gems by running in #inspec-notify:
+
 ```
 /expeditor promote inspec/GEMNAME:master VERSION
 ```
 
-## Merging InSpec PRs
+## Merging Chef InSpec PRs
 
 At the time of writing, a merge typically takes about 30-40 minutes of test time.
 
@@ -44,7 +46,7 @@ Connect to the Chef VPN to fetch Expeditor logs in the event of a failure.
 
 ### Check Expeditor Labels
 
-Most, though not all, PRs shouldn't have any Expeditor control labels. The patchlevel (4.18.X) will be automatically incremented by the [expeditor configuration](https://github.com/inspec/inspec/blob/44fe144732e1e0abb2594957a880c5f1821e7774/.expeditor/config.yml#L117) and the [version bump script](https://github.com/inspec/inspec/blob/master/.expeditor/update_version.sh).
+Most, though not all, PRs should not have any Expeditor control labels. The patchlevel (4.18.X) will be automatically incremented by the [expeditor configuration](https://github.com/inspec/inspec/blob/44fe144732e1e0abb2594957a880c5f1821e7774/.expeditor/config.yml#L117) and the [version bump script](https://github.com/inspec/inspec/blob/master/.expeditor/update_version.sh).
 
 Here are the Expeditor control labels, and the circumstances under which they should be used:
 
@@ -56,61 +58,61 @@ Here are the Expeditor control labels, and the circumstances under which they sh
 
 ### Click Merge
 
-This should be straightforward, assuming the big merge button is green.
+This task should be straightforward, assuming the big merge button is green.
 
-You'll see a message in #inspec-notify from Expeditor that it "performed actions for merged_inspec/inspec#1234" (for PR 1234, for example). Among the messages will be links to the Omnibus and Habitat builds.
+You will see a message in #inspec-notify from Expeditor that it "performed actions for merged_inspec/inspec#1234" in this case for PR 1234. Among the messages will be links to the Omnibus and Habitat builds.
 
 ### Watch Omnibus Build
 
-The Omnibus build creates operating-system-specific packages for each platform for which we release InSpec. Its [expeditor configuration](https://github.com/inspec/inspec/blob/44fe144732e1e0abb2594957a880c5f1821e7774/.expeditor/config.yml#L133) drives a [BuildKite configuration](https://github.com/inspec/inspec/blob/master/.expeditor/release.omnibus.yml) which lists exactly which platforms to build.
+The Omnibus build creates operating-system-specific packages for each platform on which we release Chef InSpec. Its [expeditor configuration](https://github.com/inspec/inspec/blob/44fe144732e1e0abb2594957a880c5f1821e7774/.expeditor/config.yml#L133) drives a [Buildkite configuration](https://github.com/inspec/inspec/blob/master/.expeditor/release.omnibus.yml), which lists exactly which platforms to build.
 
 The Omnibus build is generally reliable, if somewhat slow.
 
 When the omnibus build succeeds, omnitruck delivers the packages to various package repos in `unstable` channels for public consumption.
 
-### Watch Habitat Build
+### Watch Chef Habitat Build
 
-The Habitat build creates Habitat .hart packages for Linux and Windows. The [Expeditor configuration](https://github.com/inspec/inspec/blob/44fe144732e1e0abb2594957a880c5f1821e7774/.expeditor/config.yml#L138) drives a [BuildKite configuration](https://github.com/inspec/inspec/blob/master/.expeditor/build.habitat.yml).
+The Chef Habitat build creates Habitat .hart packages for Linux and Windows. The [Expeditor configuration](https://github.com/inspec/inspec/blob/44fe144732e1e0abb2594957a880c5f1821e7774/.expeditor/config.yml#L138) drives a [Buildkite configuration](https://github.com/inspec/inspec/blob/master/.expeditor/build.habitat.yml).
 
-The habitat build is unreliable, usually due to network timeouts on the Windows machines. It often requires manual retries by clicking the retry button in BuildKite (obtain the link from the message posted by Expeditor in #inspec-notify). If you do not retry, later steps will fail.
+The Chef Habitat build is unreliable, usually due to network timeouts on the Windows machines. It often requires manual retries by clicking the retry button in Buildkite. You can find the link to try a manual retry from the message posted by Expeditor in #inspec-notify. If you do not retry, later steps will fail.
 
 When the hab build succeeds, the packages will be placed on the Hab builder in the `unstable` channel for public consumption.
 
 ### Docker Image Built and Released
 
-We also release a Docker image (see[expeditor config](https://github.com/inspec/inspec/blob/44fe144732e1e0abb2594957a880c5f1821e7774/.expeditor/config.yml#L150)), which contains an Alpine system and InSpec installed from a gem, with the ENTRYPOINT of the Docker image being `inspec` (see [Dockerfile](https://github.com/inspec/inspec/blob/master/Dockerfile)). It's a simple way to ship the dependencies of inspec.
+We also release a Docker image (see [expeditor config](https://github.com/inspec/inspec/blob/44fe144732e1e0abb2594957a880c5f1821e7774/.expeditor/config.yml#L150)), which contains an Alpine system and Chef InSpec installed from a gem, with the ENTRYPOINT of the Docker image being `inspec` (see [Dockerfile](https://github.com/inspec/inspec/blob/master/Dockerfile)). It's a simple way to ship the dependencies of `inspec`.
 
-When the Docker build succeeds, it is labeled `current`.  Currently, there is nothing that promotes the Docker image to the `stable` label ([#4952](https://github.com/inspec/inspec/issues/4952)).
+When it succeeds, the Docker build is labeled as `current`.  Currently, there is nothing that promotes the Docker image to the `stable` label ([#4952](https://github.com/inspec/inspec/issues/4952)).
 
 ### Gems Built and Placed on Artifactory
 
-The inspec, inspec-bin, inspec-core, and inspec-core-bin gems are all built and placed on the internal Chef Artifactory server.  During promotion later they will be published to rubygems.org.
+The `inspec`, `inspec-bin`, `inspec-core`, and `inspec-core-bin` gems are all built and placed on the internal Chef Artifactory server.  During promotion later, they publish to rubygems.org.
 
 The difference between the gems is as follows:
 
- * inspec is a library gem, with full heavyweight dependencies, not encumbered by commercial licensing
- * inspec-bin contains an `inspec` executable and is encumbered by commercial licensing
- * inspec-core is a library gem, with lightweight dependencies and no compilation required at install time, not encumbered by commercial licensing
- * inspec-core-bin contains an `inspec` executable and is encumbered by commercial licensing
+ * `inspec` is a library gem, with full heavyweight dependencies, not encumbered by commercial licensing
+ * `inspec-bin` contains an `inspec` executable and is encumbered by commercial licensing
+ * `inspec-core` is a library gem, with lightweight dependencies and no compilation required at install time, and is not encumbered by commercial licensing
+ * `inspec-core-bin` contains an `inspec` executable and is encumbered by commercial licensing
 
 ### Update Pending Release Notes
 
-As each pull request is merged, update the [Pending Release Notes](https://github.com/inspec/inspec/wiki/Pending-Release-Notes). Some guidelines:
- * Don't include minor or non-customer visible changes, such as CI changes or test harness changes
- * Do include bug fixes, features, etc - things that impact the user.
+As you merge each pull request, update the [Pending Release Notes](https://github.com/inspec/inspec/wiki/Pending-Release-Notes). Some guidelines:
+ * Do not include minor or non-customer visible changes, such as CI changes or test harness changes.
+ * Do include bug fixes, features, and other things that impact the user.
  * Your words will be edited by the Docs team, but try help them along by keeping it human oriented; this isn't the technical-oriented CHANGELOG.
  * Add the PR number as a reference for the Docs team. They will typically remove them, but they may need to get more context by looking up the originating PR.
- * It's preferable to add notes as things merged, lest they be forgotten; sifting through a pile of merged PRs in a rush is a chore!
+ * It's preferable to add notes as things merge, lest they be forgotten; sifting through a pile of merged PRs in a rush is a chore!
 
-## Promoting InSpec
+## Promoting Chef InSpec
 
 Promotion should only be attempted if you have a set of green artifacts in #inspec-notify.
 
 ### Notify Docs Team
 
-Let the Docs team know that a release is planned and that editing of the release notes is needed.  They will polish up the words and remove any unused sections.
+Let the Docs team (@docs-team) know that a release is planned and that editing of the release notes is needed. All content should be completed at least one day before release. The Docs team will polish up the words and remove any unused sections.
 
-Wait until they let you know it is ready.
+Wait until they let you know the release notes are ready.
 
 ### Run promote command
 
@@ -154,5 +156,4 @@ inspec/inspec:master performed the following actions for inspec 4.18.100 (stable
 • Notified Slack channels of the artifact_published event
 ```
 
-Among other things, this automatically generates [release notes](https://github.com/inspec/inspec/blob/master/.expeditor/publish-release-notes.sh) and [publishes them](https://github.com/inspec/inspec/blob/master/.expeditor/announce-release.sh) to Discourse.
-
+Among other things, this promotion automatically generates [release notes](https://github.com/inspec/inspec/blob/master/.expeditor/publish-release-notes.sh) and [publishes them](https://github.com/inspec/inspec/blob/master/.expeditor/announce-release.sh) to Discourse.
